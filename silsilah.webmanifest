@@ -2,7 +2,7 @@
  "name": "Silsilah — Family Heritage",
  "short_name": "Silsilah",
  "description": "Build and explore your family tree",
- "start_url": "./silsilah.html",
+ "start_url": "./index.html",
  "display": "standalone",
  "background_color": "#0d0c08",
  "theme_color": "#0d0c08",
