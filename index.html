@@ -1092,33 +1092,118 @@
       transform: translateX(-50%) translateY(0)
     }
 
-    /* EMPTY HINT */
-    #eh {
+    /* WELCOME MODAL */
+    #wm {
       position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 50;
-      text-align: center;
-      pointer-events: none;
-      animation: fl 3s ease-in-out infinite
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, .75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center
     }
 
-    @keyframes fl {
-
-      0%,
-      100% {
-        transform: translateX(-50%) translateY(0)
-      }
-
-      50% {
-        transform: translateX(-50%) translateY(-8px)
-      }
+    #wm.open {
+      display: flex
     }
 
-    #eh p {
+    #wb {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 480px;
+      max-width: calc(100vw - 32px);
+      box-shadow: var(--sh2);
+      animation: mi .25s ease;
+      overflow: hidden
+    }
+
+    #wt {
+      padding: 28px 28px 0;
+      text-align: center
+    }
+
+    #wi {
+      font-size: 40px;
+      margin-bottom: 12px
+    }
+
+    #wtt {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      color: var(--gold);
+      margin-bottom: 6px
+    }
+
+    #ws {
       font-size: 13px;
-      color: var(--ink-soft)
+      color: var(--ink-faint);
+      line-height: 1.6
+    }
+
+    #wg {
+      padding: 20px 28px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px
+    }
+
+    .wgi {
+      background: rgba(200, 150, 62, .07);
+      border: 1px solid rgba(200, 150, 62, .18);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start
+    }
+
+    .wgic {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px
+    }
+
+    .wgit {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 3px
+    }
+
+    .wgid {
+      font-size: 12px;
+      color: var(--ink-faint);
+      line-height: 1.45
+    }
+
+    #wf {
+      padding: 20px 28px 24px;
+      text-align: center;
+      border-top: 1px solid var(--border)
+    }
+
+    #wok {
+      padding: 11px 36px;
+      border-radius: 10px;
+      background: var(--gold);
+      border: none;
+      color: #1a1200;
+      font-family: 'Lato', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      letter-spacing: .04em
+    }
+
+    #wok:hover {
+      background: var(--gold-lt);
+      transform: translateY(-1px)
     }
 
     /* LINK EXISTING PICKER */
@@ -1324,6 +1409,7 @@
       <div id="sr"></div>
     </div>
     <div id="tba">
+      <button class="tbb" id="hlp">&#10067; Help</button>
       <label class="tbb" style="cursor:pointer">&#11014; Import<input type="file" id="imp" accept=".json"
           style="display:none"></label>
       <button class="tbb" id="exp">&#11015; Export</button>
@@ -1335,10 +1421,63 @@
       <g id="sg"></g>
     </svg>
     <div id="nw"></div>
-    <div id="eh" style="display:none">
-      <div style="font-size:28px;margin-bottom:4px">&#128070;</div>
-      <p>Click the node to select it, then<br>use <strong style="color:var(--gold)">+</strong> buttons to add family
-        members</p>
+    <div id="eh" style="display:none"></div>
+  </div>
+
+  <!-- WELCOME MODAL -->
+  <div id="wm">
+    <div id="wb">
+      <div id="wt">
+        <div id="wi">🌿</div>
+        <div id="wtt">Welcome to Silsilah</div>
+        <div id="ws">Your personal family heritage tree — build, explore, and preserve your family history.</div>
+      </div>
+      <div id="wg">
+        <div class="wgi">
+          <div class="wgic">👆</div>
+          <div>
+            <div class="wgit">Select</div>
+            <div class="wgid">Click any card to select it and see details</div>
+          </div>
+        </div>
+        <div class="wgi">
+          <div class="wgic">➕</div>
+          <div>
+            <div class="wgit">Add Members</div>
+            <div class="wgid">Hover a card — use <strong style="color:var(--gold)">+</strong> to add parents or children
+            </div>
+          </div>
+        </div>
+        <div class="wgi">
+          <div class="wgic">💍</div>
+          <div>
+            <div class="wgit">Spouse</div>
+            <div class="wgid">The ring button links a spouse or partner</div>
+          </div>
+        </div>
+        <div class="wgi">
+          <div class="wgic">⇔</div>
+          <div>
+            <div class="wgit">Siblings</div>
+            <div class="wgid">The ⇔ button appears once a node has a parent</div>
+          </div>
+        </div>
+        <div class="wgi">
+          <div class="wgic">🔗</div>
+          <div>
+            <div class="wgit">Link Existing</div>
+            <div class="wgid">Pick an existing person instead of creating new</div>
+          </div>
+        </div>
+        <div class="wgi">
+          <div class="wgic">📱</div>
+          <div>
+            <div class="wgit">Mobile</div>
+            <div class="wgid">Pinch to zoom, drag to pan, tap to select</div>
+          </div>
+        </div>
+      </div>
+      <div id="wf"><button id="wok">Get Started →</button></div>
     </div>
   </div>
 
@@ -1966,8 +2105,20 @@
 
     let tt; function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2800) }
 
+    // WELCOME MODAL
+    function initWelcome() {
+      if (!localStorage.getItem('sl_welcomed')) { $('wm').classList.add('open') }
+    }
+    function openWelcome() { $('wm').classList.add('open') }
+    $('wok').addEventListener('click', () => {
+      localStorage.setItem('sl_welcomed', '1')
+      $('wm').classList.remove('open')
+    })
+    $('hlp').addEventListener('click', openWelcome)
+    $('wm').addEventListener('click', e => { if (e.target === $('wm')) $('wm').classList.remove('open') })
+
     // INIT
-    function init() { const ok = load(); if (!ok || !Object.keys(S.nodes).length) initRoot(); centre(); render() }
+    function init() { const ok = load(); if (!ok || !Object.keys(S.nodes).length) initRoot(); centre(); render(); initWelcome() }
     init()
 
     // PWA
