@@ -196,6 +196,105 @@
       color: var(--gold)
     }
 
+    /* MOBILE MENU */
+    #mbtn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--ink-faint);
+      font-size: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all .2s;
+      line-height: 1
+    }
+
+    #mbtn:hover,
+    #mbtn.open {
+      border-color: var(--gold);
+      color: var(--gold)
+    }
+
+    #mdd {
+      position: fixed;
+      top: 60px;
+      right: 12px;
+      z-index: 300;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--sh2);
+      min-width: 180px;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      animation: mi .15s ease
+    }
+
+    #mdd.open {
+      display: flex
+    }
+
+    .mdi {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: var(--ink-faint);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      transition: background .15s;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .mdi:last-child {
+      border-bottom: none
+    }
+
+    .mdi:hover {
+      background: var(--gold-dim);
+      color: var(--gold)
+    }
+
+    .mdi-icon {
+      font-size: 16px
+    }
+
+    @media(max-width:600px) {
+      #tba {
+        display: none
+      }
+
+      #mbtn {
+        display: flex
+      }
+
+      #sw {
+        max-width: none;
+        margin: 0
+      }
+
+      #logo #ls {
+        display: none
+      }
+
+      #lt {
+        font-size: 17px
+      }
+    }
+
     /* CANVAS */
     #cw {
       position: fixed;
@@ -1404,8 +1503,7 @@
         <div id="ls">Family Heritage</div>
       </div>
     </div>
-    <div id="sw"><span id="si">&#128269;</span><input id="s" type="text" placeholder="Search by name or nickname..."
-        autocomplete="off">
+    <div id="sw"><span id="si">&#128269;</span><input id="s" type="text" placeholder="Search..." autocomplete="off">
       <div id="sr"></div>
     </div>
     <div id="tba">
@@ -1414,7 +1512,17 @@
           style="display:none"></label>
       <button class="tbb" id="exp">&#11015; Export</button>
     </div>
+    <!-- Mobile hamburger -->
+    <button id="mbtn" title="Menu">&#8942;</button>
   </header>
+
+  <!-- Mobile dropdown menu -->
+  <div id="mdd">
+    <button class="mdi" id="mhlp"><span class="mdi-icon">&#10067;</span> Help</button>
+    <label class="mdi" style="cursor:pointer"><span class="mdi-icon">&#11014;</span> Import<input type="file" id="mimp"
+        accept=".json" style="display:none"></label>
+    <button class="mdi" id="mexp"><span class="mdi-icon">&#11015;</span> Export</button>
+  </div>
 
   <div id="cw">
     <svg id="svg">
@@ -1473,7 +1581,7 @@
           <div class="wgic">📱</div>
           <div>
             <div class="wgit">Mobile</div>
-            <div class="wgid">Pinch to zoom, drag to pan, tap to select</div>
+            <div class="wgid">Tap to select · Double-tap for details · Pinch to zoom</div>
           </div>
         </div>
       </div>
@@ -1628,7 +1736,7 @@
   <div id="toast"></div>
 
   <script>
-    const S = { nodes: {}, rootId: null, selId: null, tf: { x: 0, y: 0, sc: 1 }, modal: null, drag: null, pan: false, po: null, confirmCb: null }
+    const S = { nodes: {}, rootId: null, selId: null, tf: { x: 0, y: 0, sc: 1 }, modal: null, drag: null, pan: false, po: null, confirmCb: null, lastTouchId: null }
     const uid = () => crypto.randomUUID()
     const $ = id => document.getElementById(id)
     const CW = 200, CH = 138, GY = 220, GX = 240
@@ -1832,7 +1940,13 @@
 
     function bindEl(el, node) {
       el.querySelector('.nc').addEventListener('mousedown', e => { if (e.target.closest('button')) return; e.stopPropagation(); S.drag = { id: node.id, ox: e.clientX, oy: e.clientY, nx: node.x, ny: node.y, mv: false } })
-      el.querySelector('.nc').addEventListener('click', e => { if (e.target.closest('.nab')) return; if (S.drag && S.drag.mv) return; selNode(node.id) })
+      // Desktop: single click → open panel. Touch devices use tap logic in touchend instead.
+      el.querySelector('.nc').addEventListener('click', e => {
+        if (e.target.closest('.nab')) return
+        if (S.drag && S.drag.mv) return
+        if (S.lastTouchId === node.id) return // was handled by touch, skip
+        selNode(node.id); updPanel(node.id); $('pn').classList.add('open')
+      })
       el.querySelector('.ned').addEventListener('click', e => { e.stopPropagation(); openModal('edit', node.id) })
       el.querySelector('.ndl').addEventListener('click', e => { e.stopPropagation(); confirm2(`Remove "${node.fullName || 'this person'}"?`, 'This will remove them and their connections. Orphaned members remain.', () => delNode(node.id)) })
       el.querySelector('[data-a="parent"]').addEventListener('click', e => { e.stopPropagation(); if (node.parentIds.length >= 2) { toast('Max 2 parents'); return }; openLinkPicker('parent', node.id) })
@@ -1854,7 +1968,7 @@
     cvs.addEventListener('wheel', e => { e.preventDefault(); const f = e.deltaY < 0 ? 1.08 : .93, r = cvs.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top; S.tf.x = mx + (S.tf.x - mx) * f; S.tf.y = my + (S.tf.y - my) * f; S.tf.sc = Math.max(.15, Math.min(3, S.tf.sc * f)); applyTf() }, { passive: false })
 
     // TOUCH SUPPORT
-    let T = { touches: [], pinchDist: null, panStart: null, tfStart: null, dragNode: null, dragStart: null }
+    let T = { touches: [], pinchDist: null, panStart: null, tfStart: null, dragNode: null, dragStart: null, lastTap: null }
     function tdist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) }
     function tmid(a, b, r) { return { x: (a.clientX + b.clientX) / 2 - r.left, y: (a.clientY + b.clientY) / 2 - r.top } }
 
@@ -1908,8 +2022,35 @@
     }, { passive: false })
 
     cvs.addEventListener('touchend', e => {
-      if (T.dragNode) { if (T.dragNode.mv) { save(); render() }; T.dragNode = null }
+      if (T.dragNode) {
+        if (!T.dragNode.mv) {
+          // It was a tap on a node card — single tap selects, double-tap opens panel
+          const nid = T.dragNode.id
+          const now = Date.now()
+          S.lastTouchId = nid // flag so the synthetic click event is ignored
+          if (T.lastTap && T.lastTap.id === nid && now - T.lastTap.time < 350) {
+            // Double-tap → open detail panel
+            T.lastTap = null
+            selNode(nid); updPanel(nid); $('pn').classList.add('open')
+          } else {
+            // Single tap → just select (shows + buttons), close panel if open
+            T.lastTap = { id: nid, time: now }
+            if (S.selId === nid) {
+              // tapping already-selected node again = open panel
+              updPanel(nid); $('pn').classList.add('open')
+            } else {
+              selNode(nid)
+              closePanel()
+            }
+          }
+        } else {
+          save(); render()
+        }
+        T.dragNode = null
+      }
       T.panStart = null; T.tfStart = null; T.pinchDist = null
+      // clear lastTouchId after a short delay so mouse click suppression expires
+      setTimeout(() => { S.lastTouchId = null }, 400)
     })
     $('zi').addEventListener('click', () => zBy(1.2))
     $('zo').addEventListener('click', () => zBy(.83))
@@ -2105,7 +2246,30 @@
 
     let tt; function toast(m) { const el = $('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2800) }
 
-    // WELCOME MODAL
+    // MOBILE MENU
+    const mdd = $('mdd'), mbtn = $('mbtn')
+    mbtn.addEventListener('click', e => { e.stopPropagation(); const open = mdd.classList.toggle('open'); mbtn.classList.toggle('open', open) })
+    document.addEventListener('click', e => { if (!e.target.closest('#mdd') && !e.target.closest('#mbtn')) { mdd.classList.remove('open'); mbtn.classList.remove('open') } })
+    $('mhlp').addEventListener('click', () => { mdd.classList.remove('open'); mbtn.classList.remove('open'); openWelcome() })
+    $('mexp').addEventListener('click', () => {
+      mdd.classList.remove('open'); mbtn.classList.remove('open')
+      const blob = new Blob([JSON.stringify({ version: '1.0', exportedAt: new Date().toISOString(), rootNodeId: S.rootId, nodes: S.nodes }, null, 2)], { type: 'application/json' })
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `silsilah-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('Family tree exported!')
+    })
+    $('mimp').addEventListener('change', function () {
+      const file = this.files[0]; if (!file) return
+      mdd.classList.remove('open'); mbtn.classList.remove('open')
+      const reader = new FileReader()
+      reader.onload = e => {
+        try {
+          const d = JSON.parse(e.target.result)
+          if (!d.nodes || !d.rootNodeId) throw new Error()
+          const count = Object.keys(d.nodes).length
+          confirm2(`Import ${count} people?`, 'This will replace your current tree. Export first to keep a backup.', () => { S.nodes = d.nodes; S.rootId = d.rootNodeId; S.selId = null; closePanel(); save(); render(); centre(); toast(`Imported ${count} people!`) })
+        } catch (e) { toast('Invalid file. Use a Silsilah JSON export.') }
+      }
+      reader.readAsText(file); this.value = ''
+    })
     function initWelcome() {
       if (!localStorage.getItem('sl_welcomed')) { $('wm').classList.add('open') }
     }
@@ -2128,5 +2292,3 @@
 </body>
 
 </html>
-
-<!-- test -->
