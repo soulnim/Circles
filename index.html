@@ -277,13 +277,54 @@
         display: none
       }
 
+      #sw {
+        display: none
+      }
+
       #mbtn {
         display: flex
       }
 
-      #sw {
-        max-width: none;
-        margin: 0
+      #mdd {
+        width: calc(100% - 24px);
+        right: 12px;
+        left: 12px;
+      }
+
+      #mdd .msw {
+        display: block;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      #mdd .msw #s2 {
+        width: 100%;
+        padding: 10px 14px 10px 38px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--cream);
+        font-family: 'Lato', sans-serif;
+        font-size: 14px;
+        outline: none;
+      }
+
+      #mdd .msw #s2:focus {
+        border-color: var(--gold);
+      }
+
+      #mdd .msw-wrap {
+        position: relative;
+      }
+
+      #mdd .msw-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--ink-faint);
+        font-size: 16px;
+        pointer-events: none;
       }
 
       #logo #ls {
@@ -292,6 +333,10 @@
 
       #lt {
         font-size: 17px
+      }
+
+      #tb {
+        justify-content: space-between;
       }
     }
 
@@ -652,6 +697,21 @@
     .ndl:hover {
       background: var(--red);
       color: #fff
+    }
+
+    .ndt {
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 1px solid rgba(200, 150, 62, .3);
+      width: auto;
+      padding: 0 8px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .ndt:hover {
+      background: var(--gold);
+      color: #1a1200;
     }
 
     .dt {
@@ -1518,6 +1578,12 @@
 
   <!-- Mobile dropdown menu -->
   <div id="mdd">
+    <div class="msw">
+      <div class="msw-wrap">
+        <span class="msw-icon">&#128269;</span>
+        <input id="s2" type="text" placeholder="Search heritage..." autocomplete="off">
+      </div>
+    </div>
     <button class="mdi" id="mhlp"><span class="mdi-icon">&#10067;</span> Help</button>
     <label class="mdi" style="cursor:pointer"><span class="mdi-icon">&#11014;</span> Import<input type="file" id="mimp"
         accept=".json" style="display:none"></label>
@@ -1932,7 +1998,11 @@
     <div class="nn">${node.fullName || '(No name)'}</div>
     <div class="nk">${node.nickname ? `"${node.nickname}"` : ''}  </div>
     <div class="nd">${node.phone || node.address || ''}</div>
-    <div class="na"><button class="nab ned" title="Edit">&#9998;</button><button class="nab ndl" title="Delete">&#128465;</button></div>
+    <div class="na">
+      <button class="nab ndt" title="View Details">Details</button>
+      <button class="nab ned" title="Edit">&#9998;</button>
+      <button class="nab ndl" title="Delete">&#128465;</button>
+    </div>
     <div class="dt dtb"></div>
   </div>
   <button class="ab abc" data-a="child" title="Add Child">+</button>`
@@ -1940,12 +2010,17 @@
 
     function bindEl(el, node) {
       el.querySelector('.nc').addEventListener('mousedown', e => { if (e.target.closest('button')) return; e.stopPropagation(); S.drag = { id: node.id, ox: e.clientX, oy: e.clientY, nx: node.x, ny: node.y, mv: false } })
-      // Desktop: single click → open panel. Touch devices use tap logic in touchend instead.
+      // Single click/tap on the card: just SELECT the node (shows + buttons)
       el.querySelector('.nc').addEventListener('click', e => {
-        if (e.target.closest('.nab')) return
+        if (e.target.closest('button')) return
         if (S.drag && S.drag.mv) return
-        if (S.lastTouchId === node.id) return // was handled by touch, skip
-        selNode(node.id); updPanel(node.id); $('pn').classList.add('open')
+        if (S.lastTouchId === node.id) return // handled by touch logic
+        selOnly(node.id)
+      })
+      // "Details" button specifically opens the panel
+      el.querySelector('.ndt').addEventListener('click', e => {
+        e.stopPropagation()
+        selNode(node.id)
       })
       el.querySelector('.ned').addEventListener('click', e => { e.stopPropagation(); openModal('edit', node.id) })
       el.querySelector('.ndl').addEventListener('click', e => { e.stopPropagation(); confirm2(`Remove "${node.fullName || 'this person'}"?`, 'This will remove them and their connections. Orphaned members remain.', () => delNode(node.id)) })
@@ -2029,19 +2104,14 @@
           const now = Date.now()
           S.lastTouchId = nid // flag so the synthetic click event is ignored
           if (T.lastTap && T.lastTap.id === nid && now - T.lastTap.time < 350) {
-            // Double-tap → open detail panel
+            // Double-tap as shortcut to details
             T.lastTap = null
-            selNode(nid); updPanel(nid); $('pn').classList.add('open')
+            selNode(nid)
           } else {
             // Single tap → just select (shows + buttons), close panel if open
             T.lastTap = { id: nid, time: now }
-            if (S.selId === nid) {
-              // tapping already-selected node again = open panel
-              updPanel(nid); $('pn').classList.add('open')
-            } else {
-              selNode(nid)
-              closePanel()
-            }
+            selOnly(nid)
+            closePanel()
           }
         } else {
           save(); render()
@@ -2059,6 +2129,7 @@
     function centre() { const r = cvs.getBoundingClientRect(); S.tf.x = r.width / 2; S.tf.y = r.height / 2; S.tf.sc = 1; applyTf() }
 
     // SELECT & PANEL
+    function selOnly(id) { S.selId = id; renderNodes() }
     function selNode(id) { S.selId = id; renderNodes(); updPanel(id); $('pn').classList.add('open') }
     function updPanel(id) {
       const n = S.nodes[id]; if (!n) return
@@ -2118,8 +2189,7 @@
     })
 
     // SEARCH
-    $('s').addEventListener('input', function () {
-      const q = this.value.trim().toLowerCase()
+    function doSearch(q, inputEl) {
       renderConns(); renderNodes()
       const res = $('sr')
       if (!q) { res.classList.remove('open'); return }
@@ -2127,8 +2197,23 @@
       if (!matches.length) { res.innerHTML = '<div class="sri" style="color:var(--ink-faint)">No results</div>'; res.classList.add('open'); return }
       res.innerHTML = matches.slice(0, 8).map(n => `<div class="sri" data-id="${n.id}"><strong>${n.fullName || '(No name)'}</strong>${n.nickname ? ` &middot; "${n.nickname}"` : ''}${n.label ? ` <span style="color:var(--gold-lt);font-size:11px">${n.label}</span>` : ''}</div>`).join('')
       res.classList.add('open')
-      res.querySelectorAll('.sri[data-id]').forEach(el => { el.addEventListener('click', () => { const node = S.nodes[el.dataset.id]; if (!node) return; $('s').value = ''; res.classList.remove('open'); renderConns(); renderNodes(); panTo(node); selNode(node.id) }) })
-    })
+
+      const r = inputEl.getBoundingClientRect();
+      if (inputEl.id === 's2') {
+        // mobile search dropdown positioning
+        res.style.top = (inputEl.offsetTop + inputEl.offsetHeight + 6) + 'px';
+        res.style.left = inputEl.offsetLeft + 'px';
+        res.style.right = (inputEl.parentElement.offsetWidth - (inputEl.offsetLeft + inputEl.offsetWidth)) + 'px';
+        res.style.width = inputEl.offsetWidth + 'px';
+      } else {
+        res.style.top = ''; res.style.left = ''; res.style.right = ''; res.style.width = '';
+      }
+
+      res.querySelectorAll('.sri[data-id]').forEach(el => { el.addEventListener('click', () => { const node = S.nodes[el.dataset.id]; if (!node) return; inputEl.value = ''; res.classList.remove('open'); renderConns(); renderNodes(); panTo(node); selNode(node.id); if (inputEl.id === 's2') { $('mdd').classList.remove('open'); $('mbtn').classList.remove('open') } }) })
+    }
+
+    $('s').addEventListener('input', function () { doSearch(this.value.trim().toLowerCase(), this) })
+    $('s2').addEventListener('input', function () { doSearch(this.value.trim().toLowerCase(), this) })
     document.addEventListener('click', e => { if (!e.target.closest('#sw')) $('sr').classList.remove('open') })
     function panTo(node) { const r = cvs.getBoundingClientRect(); S.tf.x = r.width / 2 - node.x * S.tf.sc; S.tf.y = r.height / 2 - node.y * S.tf.sc; applyTf() }
 
