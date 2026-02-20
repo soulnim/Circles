@@ -1,9 +1,9 @@
 {
- "name": "Silsilah — Family Heritage",
- "short_name": "Silsilah",
+ "name": "Circles — Family Heritage",
+ "short_name": "Circles",
  "description": "Build and explore your family tree",
- "scope": "/Silsilah/",
- "start_url": "/Silsilah/index.html",
+ "scope": "/Circles/",
+ "start_url": "/Circles/index.html",
  "display": "standalone",
  "background_color": "#0d0c08",
  "theme_color": "#0d0c08",

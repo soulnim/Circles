@@ -1,4 +1,4 @@
-const CACHE = 'silsilah-v2';
+const CACHE = 'circles-v2';
 
 // Only pre-cache fonts — NOT the HTML (so updates always come through)
 const PRECACHE = [
@@ -14,7 +14,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
- // Wipe ALL old caches (including silsilah-v1) so stale HTML is gone
+ // Wipe ALL old caches (including circles-v1) so stale HTML is gone
  e.waitUntil(
   caches.keys()
    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))

@@ -7,9 +7,9 @@
   <meta name="theme-color" content="#0d0c08">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Silsilah">
-  <link rel="manifest" href="silsilah.webmanifest">
-  <title>Silsilah — Family Heritage</title>
+  <meta name="apple-mobile-web-app-title" content="Circles">
+  <link rel="manifest" href="circles.webmanifest">
+  <title>Circles — Family Heritage</title>
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;700&display=swap"
     rel="stylesheet">
@@ -1537,6 +1537,874 @@
       background: var(--border);
       border-radius: 3px
     }
+
+    /* ── MODE SWITCHER ── */
+    #modeBar {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      right: 0;
+      z-index: 99;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      background: rgba(13, 12, 8, .96);
+      border-bottom: 1px solid var(--border);
+      height: 44px;
+    }
+
+    .modeTab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 28px;
+      height: 100%;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      cursor: pointer;
+      color: var(--ink-faint);
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+
+    .modeTab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    .modeTab:hover:not(.active) {
+      color: var(--cream);
+    }
+
+    /* adjust existing canvas top offset for mode bar */
+    #cw {
+      top: 100px;
+    }
+
+    #cc {
+      bottom: 18px;
+    }
+
+    #leg {
+      bottom: 18px;
+    }
+
+    /* ── CIRCLES CANVAS ── */
+    #circlesCanvas {
+      display: none;
+      position: fixed;
+      inset: 100px 0 0 0;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 40%, rgba(74, 127, 181, .08) 0%, transparent 65%),
+        radial-gradient(ellipse at 20% 80%, rgba(200, 150, 62, .05) 0%, transparent 60%),
+        #0d0c08;
+      cursor: grab;
+    }
+
+    #circlesCanvas.pan {
+      cursor: grabbing;
+    }
+
+    #circlesCanvas.active {
+      display: block;
+    }
+
+    #circlesSvg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    #circlesWorld {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      transform-origin: 0 0;
+    }
+
+    /* USER NODE */
+    .c-user {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(135deg, #c8963e, #e8b85a);
+      border: 3px solid var(--gold-lt);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #1a1200;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 11px;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 32px rgba(200, 150, 62, .4), 0 4px 16px rgba(0, 0, 0, .4);
+      cursor: default;
+      user-select: none;
+      z-index: 5;
+    }
+
+    .c-user-emoji {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .c-user-label {
+      font-size: 9px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* GROUP BUBBLE (Level 2) */
+    .c-group {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 2px solid;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .2s, box-shadow .2s;
+      z-index: 4;
+    }
+
+    .c-group:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    .c-group.expanded {
+      border-style: solid;
+    }
+
+    .c-group-emoji {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .c-group-name {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      text-align: center;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0 4px;
+    }
+
+    .c-group-count {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 8px;
+      margin-top: 2px;
+    }
+
+    /* SUB-GROUP BUBBLE (Level 3) */
+    .c-subgroup {
+      position: absolute;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(200, 150, 62, .4);
+      background: rgba(26, 24, 18, .92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .32s cubic-bezier(.34, 1.56, .64, 1), opacity .28s ease, box-shadow .2s;
+      z-index: 3;
+      backdrop-filter: blur(8px);
+    }
+
+    .c-subgroup.visible {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .c-subgroup:hover {
+      border-color: var(--gold);
+      box-shadow: 0 0 14px rgba(200, 150, 62, .25);
+    }
+
+    .c-subgroup-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--cream);
+      text-align: center;
+      padding: 0 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 60px;
+    }
+
+    .c-subgroup-count {
+      font-size: 8px;
+      color: var(--gold);
+      margin-top: 2px;
+    }
+
+    /* SVG connector lines for circles canvas */
+    .c-line {
+      stroke: rgba(200, 150, 62, .25);
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    .c-line-sub {
+      stroke: rgba(200, 150, 62, .15);
+      stroke-width: 1;
+      fill: none;
+      stroke-dasharray: 4, 4;
+    }
+
+    /* ADD GROUP BUTTON */
+    #addGroupBtn {
+      position: fixed;
+      bottom: 80px;
+      right: 24px;
+      z-index: 92;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #1a1200;
+      font-size: 26px;
+      font-weight: 300;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(200, 150, 62, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    #addGroupBtn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px rgba(200, 150, 62, .6);
+    }
+
+    #addGroupBtn.active {
+      display: flex;
+    }
+
+    /* ── GROUP CONTEXT MENU ── */
+    #groupCtxMenu {
+      position: fixed;
+      z-index: 500;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--sh2);
+      min-width: 160px;
+      overflow: hidden;
+      display: none;
+    }
+
+    #groupCtxMenu.open {
+      display: block;
+    }
+
+    .ctx-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-faint);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      transition: background .15s;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ctx-item:last-child {
+      border-bottom: none;
+    }
+
+    .ctx-item:hover {
+      background: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .ctx-item.danger:hover {
+      background: rgba(192, 57, 43, .12);
+      color: var(--red);
+    }
+
+    /* ── CREATE / EDIT GROUP MODAL ── */
+    #groupMo {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(0, 0, 0, .65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #groupMo.open {
+      display: flex;
+    }
+
+    #groupMd {
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--sh2);
+      width: min(480px, 94vw);
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+    }
+
+    #groupMh {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 0;
+      margin-bottom: 16px;
+    }
+
+    #groupMh span {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cream);
+    }
+
+    #groupMh button {
+      background: none;
+      border: none;
+      color: var(--ink-faint);
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    #groupMb {
+      padding: 0 24px 8px;
+    }
+
+    #groupMf {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 16px 24px 20px;
+    }
+
+    /* group type grid */
+    .gtype-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .gtype-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 4px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--ink-faint);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .gtype-btn .gt-emoji {
+      font-size: 20px;
+    }
+
+    .gtype-btn.sel,
+    .gtype-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: var(--gold-dim);
+    }
+
+    /* color palette */
+    .gcolor-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .gcolor-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform .15s, border-color .15s;
+    }
+
+    .gcolor-swatch.sel,
+    .gcolor-swatch:hover {
+      transform: scale(1.2);
+      border-color: var(--cream);
+    }
+
+    /* sub-group tags inside the group modal */
+    .gsg-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .gsg-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(200, 150, 62, .3);
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .gsg-tag-del {
+      background: none;
+      border: none;
+      color: var(--gold);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      opacity: .7;
+    }
+
+    .gsg-tag-del:hover {
+      opacity: 1;
+    }
+
+    #gsgInput {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px dashed var(--border);
+      background: transparent;
+      color: var(--cream);
+      font-size: 12px;
+      outline: none;
+      width: 140px;
+      transition: border-color .2s;
+    }
+
+    #gsgInput:focus {
+      border-color: var(--gold);
+    }
+
+    /* ── PEOPLE LIST MODAL ── */
+    #peopleMo {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    #peopleMo.open {
+      display: flex;
+    }
+
+    #peopleMd {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      box-shadow: var(--sh2);
+      width: min(600px, 100vw);
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+
+    #peopleMh {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #peopleMh .pm-title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #peopleMh .pm-grp {
+      font-size: 11px;
+      color: var(--gold);
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    #peopleMh .pm-sub {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cream);
+    }
+
+    #peopleMh button {
+      background: none;
+      border: none;
+      color: var(--ink-faint);
+      font-size: 22px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #peopleMbody {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+
+    #peopleMfoot {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+
+    /* person row in people list */
+    .ppl-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 22px;
+      transition: background .15s;
+      cursor: default;
+    }
+
+    .ppl-row:hover {
+      background: rgba(200, 150, 62, .06);
+    }
+
+    .ppl-av {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+      flex-shrink: 0;
+      border: 2px solid transparent;
+    }
+
+    .ppl-av.str-close {
+      border-color: var(--gold);
+      box-shadow: 0 0 8px rgba(200, 150, 62, .3);
+    }
+
+    .ppl-av.str-lost {
+      opacity: .5;
+    }
+
+    .ppl-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ppl-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cream);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ppl-nick {
+      font-size: 12px;
+      color: var(--ink-faint);
+      font-style: italic;
+      margin-bottom: 2px;
+    }
+
+    .ppl-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .ppl-badge.close {
+      background: rgba(200, 150, 62, .15);
+      color: var(--gold);
+    }
+
+    .ppl-badge.friend {
+      background: rgba(22, 160, 133, .12);
+      color: var(--teal);
+    }
+
+    .ppl-badge.acquaintance {
+      background: rgba(138, 125, 96, .12);
+      color: var(--ink-faint);
+    }
+
+    .ppl-badge.lost {
+      background: rgba(192, 57, 43, .1);
+      color: rgba(192, 57, 43, .7);
+    }
+
+    .ppl-badge.family {
+      background: rgba(138, 96, 192, .12);
+      color: #8a60c0;
+    }
+
+    .ppl-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .ppl-act {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .ppl-act.edit {
+      background: rgba(200, 150, 62, .12);
+      color: var(--gold);
+    }
+
+    .ppl-act.edit:hover {
+      background: var(--gold);
+      color: #1a1200;
+    }
+
+    .ppl-act.del {
+      background: rgba(192, 57, 43, .1);
+      color: var(--red);
+    }
+
+    .ppl-act.del:hover {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .ppl-empty {
+      padding: 40px 22px;
+      text-align: center;
+      color: var(--ink-faint);
+      font-size: 13px;
+    }
+
+    /* Add/Edit person in circles — inline form inside people modal */
+    #circlePersonForm {
+      display: none;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 18px 22px;
+    }
+
+    #circlePersonForm.open {
+      display: block;
+    }
+
+    #circlePersonForm .cpf-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 14px;
+    }
+
+    .str-radio-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .str-radio {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-faint);
+      transition: all .2s;
+      user-select: none;
+    }
+
+    .str-radio input {
+      display: none;
+    }
+
+    .str-radio.sel,
+    .str-radio:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: var(--gold-dim);
+    }
+
+    /* link-from-family search */
+    #linkFamSearch {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 14px 22px;
+    }
+
+    #linkFamSearch.open {
+      display: block;
+    }
+
+    #linkFamSearch input {
+      width: 100%;
+      padding: 9px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--cream);
+      font-size: 13px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    #linkFamSearch input:focus {
+      border-color: var(--gold);
+    }
+
+    #linkFamResults {
+      margin-top: 8px;
+    }
+
+    .lfr-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .lfr-item:hover {
+      background: var(--gold-dim);
+    }
+
+    .lfr-av {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .lfr-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cream);
+    }
+
+    .lfr-sub {
+      font-size: 11px;
+      color: var(--ink-faint);
+    }
+
+    /* Circles zoom controls (reuse existing .zb) */
+    #circlesCC {
+      position: fixed;
+      bottom: 18px;
+      left: 24px;
+      z-index: 90;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #circlesCC.active {
+      display: flex;
+    }
+
+    /* responsive */
+    @media(max-width:600px) {
+      .modeTab {
+        padding: 0 16px;
+        font-size: 11px;
+      }
+
+      .gtype-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+      }
+
+      #peopleMd {
+        max-height: 92vh;
+        border-radius: 16px 16px 0 0;
+      }
+    }
   </style>
 </head>
 
@@ -1544,7 +2412,7 @@
   <header id="tb">
     <div id="logo"><span style="font-size:22px">&#127795;</span>
       <div>
-        <div id="lt">Silsilah</div>
+        <div id="lt">Circles</div>
         <div id="ls">Family Heritage</div>
       </div>
     </div>
@@ -1560,6 +2428,12 @@
     <!-- Mobile hamburger -->
     <button id="mbtn" title="Menu">&#8942;</button>
   </header>
+
+  <!-- MODE SWITCHER -->
+  <div id="modeBar">
+    <button class="modeTab active" id="tabFamily">🌳 Family Tree</button>
+    <button class="modeTab" id="tabCircles">🔵 Circles</button>
+  </div>
 
   <!-- Mobile dropdown menu -->
   <div id="mdd">
@@ -1583,12 +2457,165 @@
     <div id="eh" style="display:none"></div>
   </div>
 
+  <!-- CIRCLES CANVAS -->
+  <div id="circlesCanvas">
+    <svg id="circlesSvg">
+      <g id="csg"></g>
+    </svg>
+    <div id="circlesWorld"></div>
+  </div>
+
+  <!-- ADD GROUP FAB -->
+  <button id="addGroupBtn" title="Add Group">＋</button>
+
+  <!-- GROUP CONTEXT MENU -->
+  <div id="groupCtxMenu">
+    <button class="ctx-item" id="ctxEditGroup">✏️ Edit Group</button>
+    <button class="ctx-item" id="ctxAddSub">＋ Add Sub-group</button>
+    <button class="ctx-item danger" id="ctxDelGroup">🗑 Delete Group</button>
+  </div>
+
+  <!-- CREATE / EDIT GROUP MODAL -->
+  <div id="groupMo">
+    <div id="groupMd">
+      <div id="groupMh"><span id="groupMtitle">New Group</span><button id="groupMclose">&times;</button></div>
+      <div id="groupMb">
+        <!-- Type selector -->
+        <div class="fl full" style="margin-bottom:14px">
+          <label style="display:block;margin-bottom:8px">Group Type</label>
+          <div class="gtype-grid">
+            <button class="gtype-btn sel" data-type="school" data-emoji="🏫" data-color="#4a7fb5"
+              data-subs="Friends,Teachers,Classmates"><span class="gt-emoji">🏫</span>School</button>
+            <button class="gtype-btn" data-type="university" data-emoji="🎓" data-color="#16a085"
+              data-subs="Friends,Lecturers,Classmates"><span class="gt-emoji">🎓</span>Uni</button>
+            <button class="gtype-btn" data-type="work" data-emoji="💼" data-color="#8a60c0"
+              data-subs="Team,Clients,Management"><span class="gt-emoji">💼</span>Work</button>
+            <button class="gtype-btn" data-type="neighbourhood" data-emoji="🏘️" data-color="#c8963e"
+              data-subs="Neighbours,Friends"><span class="gt-emoji">🏘️</span>Hood</button>
+            <button class="gtype-btn" data-type="community" data-emoji="🕌" data-color="#c0392b"
+              data-subs="Members,Leaders"><span class="gt-emoji">🕌</span>Community</button>
+            <button class="gtype-btn" data-type="sports" data-emoji="⚽" data-color="#27ae60"
+              data-subs="Teammates,Coaches"><span class="gt-emoji">⚽</span>Sports</button>
+            <button class="gtype-btn" data-type="online" data-emoji="💻" data-color="#2980b9"
+              data-subs="Friends,Mutuals"><span class="gt-emoji">💻</span>Online</button>
+            <button class="gtype-btn" data-type="custom" data-emoji="✏️" data-color="#7f8c8d" data-subs=""><span
+                class="gt-emoji">✏️</span>Custom</button>
+          </div>
+        </div>
+        <div class="fl full"><label>Group Name *</label><input id="gname" type="text" placeholder="e.g. SMK Alam Shah">
+        </div>
+        <div style="display:flex;gap:12px">
+          <div class="fl" style="flex:1"><label>Emoji</label><input id="gemoji" type="text" placeholder="🏫"
+              style="width:80px"></div>
+          <div class="fl" style="flex:1"><label>Year Start</label><input id="gyearS" type="number" placeholder="2010"
+              min="1900" max="2100"></div>
+          <div class="fl" style="flex:1"><label>Year End</label><input id="gyearE" type="number" placeholder="2015"
+              min="1900" max="2100"></div>
+        </div>
+        <div class="fl full" style="margin-bottom:4px"><label>Colour</label>
+          <div class="gcolor-row" id="gcolorRow">
+            <div class="gcolor-swatch sel" data-color="#4a7fb5" style="background:#4a7fb5"></div>
+            <div class="gcolor-swatch" data-color="#16a085" style="background:#16a085"></div>
+            <div class="gcolor-swatch" data-color="#8a60c0" style="background:#8a60c0"></div>
+            <div class="gcolor-swatch" data-color="#c8963e" style="background:#c8963e"></div>
+            <div class="gcolor-swatch" data-color="#c0392b" style="background:#c0392b"></div>
+            <div class="gcolor-swatch" data-color="#27ae60" style="background:#27ae60"></div>
+          </div>
+        </div>
+        <div class="fl full">
+          <label>Sub-groups</label>
+          <div class="gsg-list" id="gsgList"></div>
+          <input id="gsgInput" type="text" placeholder="Add sub-group + Enter">
+        </div>
+      </div>
+      <div id="groupMf">
+        <button class="mb mbc" id="groupMcancel">Cancel</button>
+        <button class="mb mbs" id="groupMsave">Save Group</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PEOPLE LIST MODAL (bottom sheet) -->
+  <div id="peopleMo">
+    <div id="peopleMd">
+      <div id="peopleMh">
+        <div class="pm-title">
+          <div class="pm-grp" id="pmGroupLabel"></div>
+          <div class="pm-sub" id="pmSubLabel"></div>
+        </div>
+        <button id="peopleMclose">&times;</button>
+      </div>
+      <div id="peopleMbody">
+        <div id="pplList"></div>
+        <!-- Inline Add/Edit Person Form -->
+        <div id="circlePersonForm">
+          <div class="cpf-title" id="cpfTitle">Add Person</div>
+          <div class="fl full"><label>Full Name *</label><input id="cpfName" type="text" placeholder="e.g. Ahmad Farid">
+          </div>
+          <div style="display:flex;gap:12px">
+            <div class="fl" style="flex:1"><label>Nickname</label><input id="cpfNick" type="text"
+                placeholder="e.g. Farid"></div>
+            <div class="fl" style="flex:1"><label>Gender</label>
+              <select id="cpfGender">
+                <option value="unknown">--</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+          </div>
+          <div class="fl full"><label>Phone</label><input id="cpfPhone" type="tel" placeholder="+60123456789"></div>
+          <div class="fl full"><label>How We Met</label><input id="cpfMet" type="text"
+              placeholder="e.g. UITM orientation, Sept 2019"></div>
+          <div class="fl full"><label>Met On (Date)</label><input id="cpfMetOn" type="date"></div>
+          <div class="fl full">
+            <label>Relationship</label>
+            <div class="str-radio-row" id="strRadioRow">
+              <label class="str-radio sel" data-val="close_friend"><input type="radio" name="str" value="close_friend"
+                  checked>⭐ Close Friend</label>
+              <label class="str-radio" data-val="friend"><input type="radio" name="str" value="friend">👋 Friend</label>
+              <label class="str-radio" data-val="acquaintance"><input type="radio" name="str" value="acquaintance">🤝
+                Acquaintance</label>
+              <label class="str-radio" data-val="lost_touch"><input type="radio" name="str" value="lost_touch">🌫 Lost
+                Touch</label>
+            </div>
+          </div>
+          <div class="fl full"><label>🔒 Private Note <span style="font-size:10px;color:var(--ink-faint)">(not
+                exported)</span></label><textarea id="cpfNote"
+              placeholder="e.g. allergic to seafood, owes me RM50 lol..." rows="2"></textarea></div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+            <button class="mb mbc" id="cpfCancel">Cancel</button>
+            <button class="mb mbs" id="cpfSave">Save Person</button>
+          </div>
+        </div>
+        <!-- Link from Family Tree -->
+        <div id="linkFamSearch">
+          <div
+            style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase">
+            Link from Family Tree</div>
+          <input id="linkFamInput" type="text" placeholder="Search family members...">
+          <div id="linkFamResults"></div>
+        </div>
+      </div>
+      <div id="peopleMfoot">
+        <button class="mb mbs" id="btnAddPerson" style="flex:1">＋ Add Person</button>
+        <button class="mb" id="btnLinkFam"
+          style="flex:1;background:rgba(138,96,192,.15);border-color:#8a60c0;color:#a87de0">🔗 Link from Family</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CIRCLES ZOOM CONTROLS -->
+  <div id="circlesCC">
+    <div id="czc" style="display:flex;gap:6px"><button class="zb" id="czi">+</button><button class="zb"
+        id="czo">&minus;</button></div>
+  </div>
+
   <!-- WELCOME MODAL -->
   <div id="wm">
     <div id="wb">
       <div id="wt">
         <div id="wi">🌿</div>
-        <div id="wtt">Welcome to Silsilah</div>
+        <div id="wtt">Welcome to Circles</div>
         <div id="ws">Your personal family heritage tree — build, explore, and preserve your family history.</div>
       </div>
       <div id="wg">
@@ -2201,24 +3228,7 @@
     document.addEventListener('click', e => { if (!e.target.closest('#sw')) $('sr').classList.remove('open') })
     function panTo(node) { const r = cvs.getBoundingClientRect(); S.tf.x = r.width / 2 - node.x * S.tf.sc; S.tf.y = r.height / 2 - node.y * S.tf.sc; applyTf() }
 
-    // EXPORT/IMPORT
-    $('exp').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify({ version: '1.0', exportedAt: new Date().toISOString(), rootNodeId: S.rootId, nodes: S.nodes }, null, 2)], { type: 'application/json' })
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `silsilah-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('Family tree exported!')
-    })
-    $('imp').addEventListener('change', function () {
-      const file = this.files[0]; if (!file) return
-      const reader = new FileReader()
-      reader.onload = e => {
-        try {
-          const d = JSON.parse(e.target.result)
-          if (!d.nodes || !d.rootNodeId) throw new Error()
-          const count = Object.keys(d.nodes).length
-          confirm2(`Import ${count} people?`, 'This will replace your current tree. Export first to keep a backup.', () => { S.nodes = d.nodes; S.rootId = d.rootNodeId; S.selId = null; closePanel(); save(); render(); centre(); toast(`Imported ${count} people!`) })
-        } catch (e) { toast('Invalid file. Use a Silsilah JSON export.') }
-      }
-      reader.readAsText(file); this.value = ''
-    })
+    // EXPORT/IMPORT — handlers are set by v2.0 code below (see doExport / doImport)
 
     // LINK EXISTING PICKER
     let LX = { type: null, nodeId: null }
@@ -2320,25 +3330,7 @@
     mbtn.addEventListener('click', e => { e.stopPropagation(); const open = mdd.classList.toggle('open'); mbtn.classList.toggle('open', open) })
     document.addEventListener('click', e => { if (!e.target.closest('#mdd') && !e.target.closest('#mbtn')) { mdd.classList.remove('open'); mbtn.classList.remove('open') } })
     $('mhlp').addEventListener('click', () => { mdd.classList.remove('open'); mbtn.classList.remove('open'); openWelcome() })
-    $('mexp').addEventListener('click', () => {
-      mdd.classList.remove('open'); mbtn.classList.remove('open')
-      const blob = new Blob([JSON.stringify({ version: '1.0', exportedAt: new Date().toISOString(), rootNodeId: S.rootId, nodes: S.nodes }, null, 2)], { type: 'application/json' })
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `silsilah-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href); toast('Family tree exported!')
-    })
-    $('mimp').addEventListener('change', function () {
-      const file = this.files[0]; if (!file) return
-      mdd.classList.remove('open'); mbtn.classList.remove('open')
-      const reader = new FileReader()
-      reader.onload = e => {
-        try {
-          const d = JSON.parse(e.target.result)
-          if (!d.nodes || !d.rootNodeId) throw new Error()
-          const count = Object.keys(d.nodes).length
-          confirm2(`Import ${count} people?`, 'This will replace your current tree. Export first to keep a backup.', () => { S.nodes = d.nodes; S.rootId = d.rootNodeId; S.selId = null; closePanel(); save(); render(); centre(); toast(`Imported ${count} people!`) })
-        } catch (e) { toast('Invalid file. Use a Silsilah JSON export.') }
-      }
-      reader.readAsText(file); this.value = ''
-    })
+    // MOBILE EXPORT/IMPORT — handlers are set by v2.0 code below (see doExport / doImport)
     function initWelcome() {
       if (!localStorage.getItem('sl_welcomed')) { $('wm').classList.add('open') }
     }
@@ -2350,12 +3342,738 @@
     $('hlp').addEventListener('click', openWelcome)
     $('wm').addEventListener('click', e => { if (e.target === $('wm')) $('wm').classList.remove('open') })
 
-    // INIT
-    function init() { const ok = load(); if (!ok || !Object.keys(S.nodes).length) initRoot(); centre(); render(); initWelcome() }
+    // ════════════════════════════════════════════════════════
+    //  CIRCLES v2.0 — DATA LAYER
+    // ════════════════════════════════════════════════════════
+
+    // Extend state
+    S.circles = {}           // { [id]: { id, name, type, emoji, color, yearStart, yearEnd, subgroups: [{id,label,memberIds:[]}] } }
+    S.settings = { exportPrivateNotes: false }
+    S.mode = 'family'         // 'family' | 'circles'
+    S.ctf = { x: 0, y: 0, sc: 1 }  // circles canvas transform
+
+    // Override save / load for v2.0 schema
+    function save() {
+      try {
+        const exp = {}
+        Object.entries(S.nodes).forEach(([k, v]) => {
+          const n = { ...v }
+          exp[k] = n
+        })
+        localStorage.setItem('circles_v2', JSON.stringify({
+          version: '2.0', nodes: exp, rootId: S.rootId,
+          circles: S.circles, settings: S.settings
+        }))
+      } catch (e) { toast('Storage full! Export your data.') }
+    }
+
+    function load() {
+      try {
+        // Try v2 key first
+        let raw = localStorage.getItem('circles_v2')
+        if (raw) {
+          const d = JSON.parse(raw)
+          S.nodes = d.nodes || {}; S.rootId = d.rootId || null
+          S.circles = d.circles || {}; S.settings = d.settings || { exportPrivateNotes: false }
+          return true
+        }
+        // Fall back to old v1 key
+        raw = localStorage.getItem('sl_v1')
+        if (!raw) return false
+        const d = JSON.parse(raw)
+        S.nodes = d.nodes || {}; S.rootId = d.rootId || null
+        S.circles = {}; S.settings = { exportPrivateNotes: false }
+        return true
+      } catch (e) { return false }
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  MODE SWITCHER
+    // ════════════════════════════════════════════════════════
+    const tabFamily = $('tabFamily'), tabCircles = $('tabCircles')
+    const circlesCanvas = $('circlesCanvas')
+    const addGroupBtn = $('addGroupBtn')
+    const circlesCC = $('circlesCC')
+
+    function switchMode(mode) {
+      S.mode = mode
+      const isFam = mode === 'family'
+      $('cw').style.display = isFam ? '' : 'none'
+      $('cc').style.display = isFam ? '' : 'none'
+      $('leg').style.display = isFam ? '' : 'none'
+      circlesCanvas.classList.toggle('active', !isFam)
+      addGroupBtn.classList.toggle('active', !isFam)
+      circlesCC.classList.toggle('active', !isFam)
+      tabFamily.classList.toggle('active', isFam)
+      tabCircles.classList.toggle('active', !isFam)
+      if (!isFam) renderCirclesView()
+    }
+
+    tabFamily.addEventListener('click', () => switchMode('family'))
+    tabCircles.addEventListener('click', () => switchMode('circles'))
+
+    // ════════════════════════════════════════════════════════
+    //  CIRCLES CANVAS — RENDERING
+    // ════════════════════════════════════════════════════════
+    const cWorld = $('circlesWorld')
+    const cSvgG = $('csg')
+    let CCtf = { x: 0, y: 0, sc: 1 }
+    let expandedGroupId = null
+
+    function applyCTf() {
+      const { x, y, sc } = CCtf
+      cWorld.style.transform = `translate(${x}px,${y}px) scale(${sc})`
+      cWorld.style.transformOrigin = '0 0'
+      cSvgG.setAttribute('transform', `translate(${x},${y}) scale(${sc})`)
+    }
+
+    function groupTotalMembers(g) {
+      return (g.subgroups || []).reduce((s, sg) => s + (sg.memberIds || []).length, 0)
+    }
+
+    function getUserName() {
+      const root = S.nodes[S.rootId]
+      return root ? (root.nickname || root.fullName || 'You') : 'You'
+    }
+
+    function renderCirclesView() {
+      cWorld.innerHTML = ''
+      cSvgG.innerHTML = ''
+      const cvs = circlesCanvas
+      const r = cvs.getBoundingClientRect()
+      const cx = r.width / 2, cy = r.height / 2
+
+      // ── User centre node ──
+      const userEl = document.createElement('div')
+      userEl.className = 'c-user'
+      userEl.style.left = cx + 'px'; userEl.style.top = cy + 'px'
+      userEl.innerHTML = `<span class="c-user-emoji">🫂</span><span class="c-user-label">${getUserName()}</span>`
+      cWorld.appendChild(userEl)
+
+      // ── Lay out group bubbles in a circle around the user ──
+      const groups = Object.values(S.circles)
+      const R = Math.min(cx, cy) * 0.55   // orbit radius
+      const total = groups.length
+
+      groups.forEach((g, i) => {
+        const angle = (2 * Math.PI * i / Math.max(total, 1)) - Math.PI / 2
+        const gx = cx + R * Math.cos(angle)
+        const gy = cy + R * Math.sin(angle)
+
+        // SVG line: user → group
+        drawCLine(cSvgG, cx, cy, gx, gy, 'c-line')
+
+        const el = document.createElement('div')
+        el.className = 'c-group' + (expandedGroupId === g.id ? ' expanded' : '')
+        el.dataset.gid = g.id
+        el.style.left = gx + 'px'; el.style.top = gy + 'px'
+        el.style.background = hexAlpha(g.color, 0.15)
+        el.style.borderColor = g.color
+        el.style.color = g.color
+        el.style.boxShadow = `0 0 20px ${hexAlpha(g.color, 0.2)}`
+        const totalM = groupTotalMembers(g)
+        const yrLabel = g.yearStart ? ` '${String(g.yearStart).slice(-2)}${g.yearEnd ? `–'${String(g.yearEnd).slice(-2)}` : '+'}` : ''
+        el.innerHTML = `
+          <span class="c-group-emoji">${g.emoji}</span>
+          <span class="c-group-name" style="color:${g.color}">${g.name}${yrLabel}</span>
+          <span class="c-group-count" style="background:${hexAlpha(g.color, 0.2)};color:${g.color}">${totalM} people</span>`
+
+        // Long-press / right-click → context menu
+        let pressTimer
+        el.addEventListener('contextmenu', e => { e.preventDefault(); openGroupCtx(g.id, e.clientX, e.clientY) })
+        el.addEventListener('touchstart', () => { pressTimer = setTimeout(() => openGroupCtx(g.id, null, null), 600) }, { passive: true })
+        el.addEventListener('touchend', () => clearTimeout(pressTimer))
+        el.addEventListener('touchmove', () => clearTimeout(pressTimer))
+
+        // Click → toggle expand sub-groups
+        el.addEventListener('click', e => {
+          if (e.target.closest('.c-subgroup')) return
+          expandedGroupId = expandedGroupId === g.id ? null : g.id
+          renderCirclesView()
+        })
+
+        cWorld.appendChild(el)
+
+        // ── Sub-group bubbles (only if this group is expanded) ──
+        if (expandedGroupId === g.id) {
+          const subs = g.subgroups || []
+          const SR = 120   // sub-group orbit radius from group centre
+          subs.forEach((sg, si) => {
+            const subAngle = angle + (2 * Math.PI * si / Math.max(subs.length, 1))
+            const sx = gx + SR * Math.cos(subAngle)
+            const sy = gy + SR * Math.sin(subAngle)
+
+            drawCLine(cSvgG, gx, gy, sx, sy, 'c-line-sub')
+
+            const sel = document.createElement('div')
+            sel.className = 'c-subgroup'
+            sel.dataset.gid = g.id; sel.dataset.sgid = sg.id
+            sel.style.left = sx + 'px'; sel.style.top = sy + 'px'
+            sel.innerHTML = `
+              <span class="c-subgroup-label">${sg.label}</span>
+              <span class="c-subgroup-count">${(sg.memberIds || []).length} 👤</span>`
+
+            // Animate in after a frame
+            requestAnimationFrame(() => { requestAnimationFrame(() => sel.classList.add('visible')) })
+
+            sel.addEventListener('click', e => {
+              e.stopPropagation()
+              openPeopleModal(g.id, sg.id)
+            })
+
+            cWorld.appendChild(sel)
+          })
+        }
+      })
+    }
+
+    function drawCLine(svgG, x1, y1, x2, y2, cls) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1)
+      line.setAttribute('x2', x2); line.setAttribute('y2', y2)
+      line.setAttribute('class', cls)
+      svgG.appendChild(line)
+    }
+
+    function hexAlpha(hex, a) {
+      const r = parseInt(hex.slice(1, 3), 16)
+      const g = parseInt(hex.slice(3, 5), 16)
+      const b = parseInt(hex.slice(5, 7), 16)
+      return `rgba(${r},${g},${b},${a})`
+    }
+
+    // Circles canvas pan & zoom
+    const cvs2 = circlesCanvas
+    let cpan = false, cpo = null
+    cvs2.addEventListener('mousedown', e => {
+      if (e.target.closest('.c-group') || e.target.closest('.c-subgroup') || e.target.closest('.c-user')) return
+      cpan = true; cpo = { x: e.clientX, y: e.clientY, tx: CCtf.x, ty: CCtf.y }
+      cvs2.classList.add('pan')
+    })
+    document.addEventListener('mousemove', e => {
+      if (cpan && cpo) { CCtf.x = cpo.tx + (e.clientX - cpo.x); CCtf.y = cpo.ty + (e.clientY - cpo.y); applyCTf() }
+    })
+    document.addEventListener('mouseup', () => { cpan = false; cpo = null; cvs2.classList.remove('pan') })
+    cvs2.addEventListener('wheel', e => {
+      e.preventDefault()
+      const f = e.deltaY < 0 ? 1.08 : .93
+      const r = cvs2.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top
+      CCtf.x = mx + (CCtf.x - mx) * f; CCtf.y = my + (CCtf.y - my) * f
+      CCtf.sc = Math.max(.2, Math.min(3, CCtf.sc * f)); applyCTf()
+    }, { passive: false })
+    $('czi').addEventListener('click', () => czBy(1.2))
+    $('czo').addEventListener('click', () => czBy(.83))
+    function czBy(f) {
+      const r = cvs2.getBoundingClientRect(), cx = r.width / 2, cy = r.height / 2
+      CCtf.x = cx + (CCtf.x - cx) * f; CCtf.y = cy + (CCtf.y - cy) * f
+      CCtf.sc = Math.max(.2, Math.min(3, CCtf.sc * f)); applyCTf()
+    }
+
+    // Touch pan for circles canvas
+    let CT = { panStart: null }
+    cvs2.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) {
+        const t = e.touches[0]
+        if (document.elementFromPoint(t.clientX, t.clientY)?.closest('.c-group,.c-subgroup,.c-user')) return
+        CT.panStart = { x: t.clientX, y: t.clientY, tx: CCtf.x, ty: CCtf.y }
+      }
+    }, { passive: true })
+    cvs2.addEventListener('touchmove', e => {
+      if (e.touches.length === 1 && CT.panStart) {
+        const t = e.touches[0]
+        CCtf.x = CT.panStart.tx + (t.clientX - CT.panStart.x)
+        CCtf.y = CT.panStart.ty + (t.clientY - CT.panStart.y)
+        applyCTf()
+      }
+    }, { passive: true })
+    cvs2.addEventListener('touchend', () => { CT.panStart = null })
+
+    // ════════════════════════════════════════════════════════
+    //  GROUP CONTEXT MENU
+    // ════════════════════════════════════════════════════════
+    let ctxGroupId = null
+    const groupCtxMenu = $('groupCtxMenu')
+
+    function openGroupCtx(gid, mx, my) {
+      ctxGroupId = gid
+      groupCtxMenu.classList.add('open')
+      if (mx !== null) {
+        groupCtxMenu.style.left = Math.min(mx, window.innerWidth - 180) + 'px'
+        groupCtxMenu.style.top = Math.min(my, window.innerHeight - 140) + 'px'
+      } else {
+        groupCtxMenu.style.left = '50%'; groupCtxMenu.style.top = '50%'
+        groupCtxMenu.style.transform = 'translate(-50%,-50%)'
+      }
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#groupCtxMenu')) { groupCtxMenu.classList.remove('open'); groupCtxMenu.style.transform = '' }
+    })
+
+    $('ctxEditGroup').addEventListener('click', () => {
+      groupCtxMenu.classList.remove('open')
+      if (ctxGroupId) openGroupModal('edit', ctxGroupId)
+    })
+    $('ctxAddSub').addEventListener('click', () => {
+      groupCtxMenu.classList.remove('open')
+      if (ctxGroupId) {
+        const label = prompt('Sub-group name:')
+        if (!label?.trim()) return
+        const g = S.circles[ctxGroupId]; if (!g) return
+        if (!g.subgroups) g.subgroups = []
+        g.subgroups.push({ id: uid(), label: label.trim(), memberIds: [] })
+        save(); renderCirclesView(); toast('Sub-group added!')
+      }
+    })
+    $('ctxDelGroup').addEventListener('click', () => {
+      groupCtxMenu.classList.remove('open')
+      if (!ctxGroupId) return
+      const g = S.circles[ctxGroupId]
+      confirm2(`Delete "${g?.name}"?`, 'Members are kept. Only this group and its sub-groups are removed.', () => {
+        delete S.circles[ctxGroupId]
+        if (expandedGroupId === ctxGroupId) expandedGroupId = null
+        save(); renderCirclesView(); toast('Group deleted.')
+      })
+    })
+
+    // ════════════════════════════════════════════════════════
+    //  CREATE / EDIT GROUP MODAL
+    // ════════════════════════════════════════════════════════
+    let GM = { mode: 'create', gid: null, color: '#4a7fb5', subgroups: [] }
+    const PALETTE_COLORS = ['#4a7fb5', '#16a085', '#8a60c0', '#c8963e', '#c0392b', '#27ae60']
+
+    addGroupBtn.addEventListener('click', () => openGroupModal('create'))
+    $('groupMclose').addEventListener('click', closeGroupModal)
+    $('groupMcancel').addEventListener('click', closeGroupModal)
+    $('groupMo').addEventListener('click', e => { if (e.target === $('groupMo')) closeGroupModal() })
+
+    function openGroupModal(mode, gid = null) {
+      GM.mode = mode; GM.gid = gid
+      $('groupMtitle').textContent = mode === 'edit' ? 'Edit Group' : 'New Group'
+
+      // Reset type buttons
+      document.querySelectorAll('.gtype-btn').forEach(b => b.classList.remove('sel'))
+      document.querySelector('.gtype-btn[data-type="school"]').classList.add('sel')
+      GM.color = '#4a7fb5'
+      GM.subgroups = ['Friends', 'Teachers', 'Classmates']
+
+      if (mode === 'edit' && gid) {
+        const g = S.circles[gid]; if (!g) return
+        $('gname').value = g.name; $('gemoji').value = g.emoji
+        $('gyearS').value = g.yearStart || ''; $('gyearE').value = g.yearEnd || ''
+        GM.color = g.color; GM.subgroups = (g.subgroups || []).map(s => s.label)
+        document.querySelectorAll('.gtype-btn').forEach(b => {
+          if (b.dataset.type === g.type) b.classList.add('sel')
+          else b.classList.remove('sel')
+        })
+      } else {
+        $('gname').value = ''; $('gemoji').value = '🏫'
+        $('gyearS').value = ''; $('gyearE').value = ''
+      }
+
+      refreshGColorRow(); refreshGSgList()
+      $('groupMo').classList.add('open'); $('gname').focus()
+    }
+
+    function closeGroupModal() { $('groupMo').classList.remove('open') }
+
+    function refreshGColorRow() {
+      document.querySelectorAll('.gcolor-swatch').forEach(s => s.classList.toggle('sel', s.dataset.color === GM.color))
+    }
+
+    function refreshGSgList() {
+      const list = $('gsgList')
+      list.innerHTML = GM.subgroups.map((sg, i) => `
+        <div class="gsg-tag">${sg}<button class="gsg-tag-del" data-i="${i}">&times;</button></div>`).join('')
+      list.querySelectorAll('.gsg-tag-del').forEach(btn => {
+        btn.addEventListener('click', () => { GM.subgroups.splice(+btn.dataset.i, 1); refreshGSgList() })
+      })
+    }
+
+    // Type button selection
+    document.querySelectorAll('.gtype-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.gtype-btn').forEach(b => b.classList.remove('sel'))
+        btn.classList.add('sel')
+        $('gemoji').value = btn.dataset.emoji
+        GM.color = btn.dataset.color; refreshGColorRow()
+        GM.subgroups = btn.dataset.subs ? btn.dataset.subs.split(',') : []
+        refreshGSgList()
+      })
+    })
+
+    // Color swatches
+    document.querySelectorAll('.gcolor-swatch').forEach(s => {
+      s.addEventListener('click', () => { GM.color = s.dataset.color; refreshGColorRow() })
+    })
+
+    // Sub-group input
+    $('gsgInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && $('gsgInput').value.trim()) {
+        GM.subgroups.push($('gsgInput').value.trim()); $('gsgInput').value = ''; refreshGSgList()
+      }
+    })
+
+    $('groupMsave').addEventListener('click', () => {
+      const name = $('gname').value.trim(); if (!name) { $('gname').style.borderColor = 'var(--red)'; $('gname').focus(); return }
+      $('gname').style.borderColor = ''
+      const selType = document.querySelector('.gtype-btn.sel')
+
+      if (GM.mode === 'create') {
+        const gid = uid()
+        // Preserve existing subgroups if editing, else create fresh
+        const existingSubs = GM.subgroups.map(label => ({ id: uid(), label, memberIds: [] }))
+        S.circles[gid] = {
+          id: gid, name, type: selType?.dataset.type || 'custom',
+          emoji: $('gemoji').value || (selType?.dataset.emoji) || '✏️',
+          color: GM.color,
+          yearStart: $('gyearS').value ? +$('gyearS').value : null,
+          yearEnd: $('gyearE').value ? +$('gyearE').value : null,
+          subgroups: existingSubs
+        }
+        toast('Group created!')
+      } else {
+        const g = S.circles[GM.gid]; if (!g) return
+        // Preserve existing sub-group member lists when editing
+        const existingMap = {}; (g.subgroups || []).forEach(s => existingMap[s.label] = s)
+        g.name = name; g.type = selType?.dataset.type || 'custom'
+        g.emoji = $('gemoji').value || (selType?.dataset.emoji) || '✏️'
+        g.color = GM.color
+        g.yearStart = $('gyearS').value ? +$('gyearS').value : null
+        g.yearEnd = $('gyearE').value ? +$('gyearE').value : null
+        g.subgroups = GM.subgroups.map(label =>
+          existingMap[label] ? existingMap[label] : { id: uid(), label, memberIds: [] }
+        )
+        toast('Group updated!')
+      }
+      closeGroupModal(); save(); renderCirclesView()
+    })
+
+    // ════════════════════════════════════════════════════════
+    //  PEOPLE LIST MODAL
+    // ════════════════════════════════════════════════════════
+    let PM = { gid: null, sgid: null, editNodeId: null }
+
+    function avBg(gender) {
+      return gender === 'male' ? 'linear-gradient(135deg,#4a7fb5,#2c5f8a)'
+        : gender === 'female' ? 'linear-gradient(135deg,#c0607a,#8a3050)'
+          : 'linear-gradient(135deg,#7a7060,#554c3a)'
+    }
+
+    const STR_LABELS = { close_friend: 'Close Friend', friend: 'Friend', acquaintance: 'Acquaintance', lost_touch: 'Lost Touch' }
+    const STR_CLS = { close_friend: 'close', friend: 'friend', acquaintance: 'acquaintance', lost_touch: 'lost' }
+    const STR_AV = { close_friend: 'str-close', friend: '', acquaintance: '', lost_touch: 'str-lost' }
+
+    function openPeopleModal(gid, sgid) {
+      PM.gid = gid; PM.sgid = sgid; PM.editNodeId = null
+      const g = S.circles[gid]; if (!g) return
+      const sg = (g.subgroups || []).find(s => s.id === sgid); if (!sg) return
+      $('pmGroupLabel').textContent = `${g.emoji} ${g.name}`
+      $('pmSubLabel').textContent = sg.label
+      closeCpf(); closeLinkFam()
+      renderPplList(g, sg)
+      $('peopleMo').classList.add('open')
+    }
+
+    function closePeopleModal() { $('peopleMo').classList.remove('open'); closeCpf(); closeLinkFam() }
+    $('peopleMclose').addEventListener('click', closePeopleModal)
+    $('peopleMo').addEventListener('click', e => { if (e.target === $('peopleMo')) closePeopleModal() })
+
+    function renderPplList(g, sg) {
+      const list = $('pplList')
+      const members = (sg.memberIds || []).map(id => S.nodes[id]).filter(Boolean)
+      if (!members.length) {
+        list.innerHTML = '<div class="ppl-empty">No one here yet.<br><span style="font-size:12px">Add people using the buttons below.</span></div>'
+        return
+      }
+      list.innerHTML = members.map(n => {
+        const str = n.relationshipStrength || 'friend'
+        const isFam = n.parentIds?.length || n.childrenIds?.length || n.isRoot
+        return `<div class="ppl-row" data-nid="${n.id}">
+          <div class="ppl-av ${STR_AV[str]}" style="background:${avBg(n.gender)}">${ini(n.fullName)}</div>
+          <div class="ppl-info">
+            <div class="ppl-name">${n.fullName || '(No name)'}</div>
+            ${n.nickname ? `<div class="ppl-nick">"${n.nickname}"</div>` : ''}
+            <span class="ppl-badge ${STR_CLS[str]}">${STR_LABELS[str]}</span>
+            ${isFam ? '<span class="ppl-badge family" style="margin-left:4px">🌳 Family</span>' : ''}
+          </div>
+          <div class="ppl-actions">
+            <button class="ppl-act edit" data-nid="${n.id}" title="Edit">✏️</button>
+            <button class="ppl-act del" data-nid="${n.id}" title="Remove">🗑</button>
+          </div>
+        </div>`
+      }).join('')
+
+      list.querySelectorAll('.ppl-act.edit').forEach(btn => {
+        btn.addEventListener('click', () => openCpf('edit', btn.dataset.nid))
+      })
+      list.querySelectorAll('.ppl-act.del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const g2 = S.circles[PM.gid]; if (!g2) return
+          const sg2 = (g2.subgroups || []).find(s => s.id === PM.sgid); if (!sg2) return
+          confirm2('Remove person?', 'They will stay in the family tree if they are a family member.', () => {
+            sg2.memberIds = (sg2.memberIds || []).filter(id => id !== btn.dataset.nid)
+            save(); renderCirclesView(); const g3 = S.circles[PM.gid]; const sg3 = (g3?.subgroups || []).find(s => s.id === PM.sgid)
+            if (g3 && sg3) renderPplList(g3, sg3); else closePeopleModal()
+            toast('Removed.')
+          })
+        })
+      })
+    }
+
+    // ADD / EDIT INLINE FORM
+    function openCpf(mode, nodeId = null) {
+      PM.editNodeId = mode === 'edit' ? nodeId : null
+      closeLinkFam()
+      $('cpfTitle').textContent = mode === 'edit' ? 'Edit Person' : 'Add Person'
+      $('cpfName').value = ''; $('cpfNick').value = ''; $('cpfGender').value = 'unknown'
+      $('cpfPhone').value = ''; $('cpfMet').value = ''; $('cpfMetOn').value = ''; $('cpfNote').value = ''
+      // Reset str radio
+      document.querySelectorAll('.str-radio').forEach(r => r.classList.remove('sel'))
+      document.querySelector('.str-radio[data-val="close_friend"]').classList.add('sel')
+      document.querySelector('input[name="str"][value="close_friend"]').checked = true
+
+      if (mode === 'edit' && nodeId) {
+        const n = S.nodes[nodeId]; if (!n) return
+        $('cpfName').value = n.fullName; $('cpfNick').value = n.nickname || ''
+        $('cpfGender').value = n.gender || 'unknown'; $('cpfPhone').value = n.phone || ''
+        $('cpfMet').value = n.howWeMet || ''; $('cpfMetOn').value = n.metOn || ''; $('cpfNote').value = n.privateNote || ''
+        const str = n.relationshipStrength || 'close_friend'
+        document.querySelectorAll('.str-radio').forEach(r => r.classList.toggle('sel', r.dataset.val === str))
+        const ri = document.querySelector(`input[name="str"][value="${str}"]`); if (ri) ri.checked = true
+      }
+      $('circlePersonForm').classList.add('open')
+      $('cpfName').focus()
+    }
+    function closeCpf() { $('circlePersonForm').classList.remove('open'); PM.editNodeId = null }
+
+    // Relationship radio UX
+    document.querySelectorAll('.str-radio').forEach(label => {
+      label.addEventListener('click', () => {
+        document.querySelectorAll('.str-radio').forEach(r => r.classList.remove('sel'))
+        label.classList.add('sel')
+      })
+    })
+
+    $('btnAddPerson').addEventListener('click', () => {
+      closeLinkFam(); openCpf('add')
+    })
+    $('cpfCancel').addEventListener('click', closeCpf)
+
+    $('cpfSave').addEventListener('click', () => {
+      const name = $('cpfName').value.trim(); if (!name) { $('cpfName').style.borderColor = 'var(--red)'; $('cpfName').focus(); return }
+      $('cpfName').style.borderColor = ''
+      const strVal = document.querySelector('input[name="str"]:checked')?.value || 'friend'
+      const data = {
+        fullName: name, nickname: $('cpfNick').value.trim(), gender: $('cpfGender').value,
+        phone: $('cpfPhone').value.trim(), howWeMet: $('cpfMet').value.trim(),
+        metOn: $('cpfMetOn').value, privateNote: $('cpfNote').value.trim(),
+        relationshipStrength: strVal
+      }
+
+      if (PM.editNodeId) {
+        // Editing existing node
+        const n = S.nodes[PM.editNodeId]; if (!n) return
+        Object.assign(n, data)
+        toast('Updated!')
+      } else {
+        // New node — create and add to subgroup
+        const nid = uid()
+        S.nodes[nid] = { id: nid, parentIds: [], childrenIds: [], spouseId: null, siblingIds: [], isRoot: false, x: 0, y: 0, label: '', ...data }
+        const g = S.circles[PM.gid]; if (!g) return
+        const sg = (g.subgroups || []).find(s => s.id === PM.sgid); if (!sg) return
+        if (!sg.memberIds) sg.memberIds = []
+        sg.memberIds.push(nid)
+        toast('Person added!')
+      }
+
+      save(); renderCirclesView()
+      const g2 = S.circles[PM.gid]; const sg2 = (g2?.subgroups || []).find(s => s.id === PM.sgid)
+      if (g2 && sg2) renderPplList(g2, sg2)
+      closeCpf()
+    })
+
+    // LINK FROM FAMILY TREE
+    $('btnLinkFam').addEventListener('click', () => {
+      closeCpf()
+      const lfs = $('linkFamSearch')
+      lfs.classList.toggle('open')
+      if (lfs.classList.contains('open')) {
+        $('linkFamInput').value = ''; renderLinkFamResults(''); $('linkFamInput').focus()
+      }
+    })
+    function closeLinkFam() { $('linkFamSearch').classList.remove('open'); $('linkFamResults').innerHTML = '' }
+
+    $('linkFamInput').addEventListener('input', function () { renderLinkFamResults(this.value.trim().toLowerCase()) })
+
+    function renderLinkFamResults(q) {
+      const out = $('linkFamResults')
+      const g = S.circles[PM.gid]; const sg = g && (g.subgroups || []).find(s => s.id === PM.sgid)
+      const existing = new Set(sg?.memberIds || [])
+      let candidates = Object.values(S.nodes).filter(n => !existing.has(n.id) && (n.parentIds?.length || n.childrenIds?.length || n.isRoot))
+      if (q) candidates = candidates.filter(n => mn(n, q))
+      if (!candidates.length) { out.innerHTML = '<div style="padding:8px 12px;color:var(--ink-faint);font-size:12px">No family members found.</div>'; return }
+      out.innerHTML = candidates.slice(0, 20).map(n => `
+        <div class="lfr-item" data-nid="${n.id}">
+          <div class="lfr-av" style="background:${avBg(n.gender)}">${ini(n.fullName)}</div>
+          <div><div class="lfr-name">${n.fullName || '(No name)'}</div>
+          <div class="lfr-sub">${n.nickname ? `"${n.nickname}" · ` : ''}${n.label || ''} 🌳</div></div>
+        </div>`).join('')
+      out.querySelectorAll('.lfr-item').forEach(el => {
+        el.addEventListener('click', () => {
+          if (!sg) return
+          if (!sg.memberIds) sg.memberIds = []
+          if (sg.memberIds.includes(el.dataset.nid)) { toast('Already in this sub-group'); return }
+          sg.memberIds.push(el.dataset.nid)
+          save(); closeLinkFam(); renderCirclesView(); renderPplList(g, sg); toast('Linked from family tree!')
+        })
+      })
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  SEARCH UPGRADE (Family + Circles)
+    // ════════════════════════════════════════════════════════
+    function doSearch(q, inputEl) {
+      if (S.mode === 'family') { renderConns(); renderNodes() }
+      const res = $('sr')
+      if (!q) { res.classList.remove('open'); return }
+
+      const matches = []
+
+      // Family matches
+      Object.values(S.nodes).forEach(n => {
+        if (!mn(n, q)) return
+        // Check if also in circles
+        const circleBadges = []
+        Object.values(S.circles).forEach(g => {
+          (g.subgroups || []).forEach(sg => {
+            if ((sg.memberIds || []).includes(n.id)) circleBadges.push(`🔵 ${g.name} › ${sg.label}`)
+          })
+        })
+        const isFamNode = n.parentIds?.length || n.childrenIds?.length || n.isRoot
+        matches.push({ n, badges: isFamNode ? ['🌳 Family', ...circleBadges] : circleBadges.length ? circleBadges : ['🌳 Family'] })
+      })
+
+      // Circles-only members (not in family at all)
+      const famIds = new Set(Object.values(S.nodes).map(n => n.id))
+      // already covered above since all nodes share the same S.nodes pool
+
+      if (!matches.length) { res.innerHTML = '<div class="sri" style="color:var(--ink-faint)">No results</div>'; res.classList.add('open'); return }
+
+      res.innerHTML = matches.slice(0, 10).map(({ n, badges }) =>
+        `<div class="sri" data-id="${n.id}">
+          <strong>${n.fullName || '(No name)'}</strong>${n.nickname ? ` · "${n.nickname}"` : ''}
+          <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">${badges.map(b => `<span style="font-size:10px;color:var(--gold-lt)">${b}</span>`).join('')}</div>
+        </div>`).join('')
+      res.classList.add('open')
+
+      if (inputEl.id === 's2') {
+        res.style.top = (inputEl.offsetTop + inputEl.offsetHeight + 6) + 'px'
+        res.style.left = inputEl.offsetLeft + 'px'; res.style.right = (inputEl.parentElement.offsetWidth - (inputEl.offsetLeft + inputEl.offsetWidth)) + 'px'
+        res.style.width = inputEl.offsetWidth + 'px'
+      } else { res.style.top = ''; res.style.left = ''; res.style.right = ''; res.style.width = '' }
+
+      res.querySelectorAll('.sri[data-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const node = S.nodes[el.dataset.id]; if (!node) return
+          inputEl.value = ''; res.classList.remove('open')
+          if (S.mode === 'circles') switchMode('family')
+          renderConns(); renderNodes(); panTo(node); selNode(node.id)
+          if (inputEl.id === 's2') { $('mdd').classList.remove('open'); $('mbtn').classList.remove('open') }
+        })
+      })
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  EXPORT / IMPORT UPGRADE (v2.0)
+    // ════════════════════════════════════════════════════════
+    function buildExportData(includePrivate) {
+      const exportNodes = {}
+      Object.entries(S.nodes).forEach(([k, v]) => {
+        const n = { ...v }
+        if (!includePrivate) delete n.privateNote
+        exportNodes[k] = n
+      })
+      return JSON.stringify({
+        version: '2.0', exportedAt: new Date().toISOString(),
+        rootNodeId: S.rootId, nodes: exportNodes,
+        circles: S.circles, settings: { exportPrivateNotes: includePrivate }
+      }, null, 2)
+    }
+
+    function doExport() {
+      confirm2('Export Options', 'Include private notes in the export?', () => {
+        const blob = new Blob([buildExportData(true)], { type: 'application/json' })
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+        a.download = `circles-${new Date().toISOString().slice(0, 10)}.json`; a.click()
+        URL.revokeObjectURL(a.href); toast('Exported with private notes!')
+      })
+      // Also trigger the default no-private-notes export immediately via backdrop dismiss
+      // Actually: show a toast and immediately export without notes (cancel = no notes)
+      const blob = new Blob([buildExportData(false)], { type: 'application/json' })
+      const downloadDefault = () => {
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+        a.download = `circles-${new Date().toISOString().slice(0, 10)}.json`; a.click()
+        URL.revokeObjectURL(a.href); toast('Exported!')
+      }
+      // Override: use a simple approach — export without notes, and the confirm is "include private?"
+      // Re-wire confirm to only export with private if YES pressed
+      // We already hooked confirm2 above, so just make "no" export default
+      const origCb = S.confirmCb
+      const cno = $('cno')
+      const origCnoClick = cno.onclick
+      cno.onclick = () => {
+        $('co').classList.remove('open'); S.confirmCb = null
+        downloadDefault(); cno.onclick = origCnoClick
+      }
+    }
+
+    function doImport(file, onDone) {
+      const reader = new FileReader()
+      reader.onload = e => {
+        try {
+          const d = JSON.parse(e.target.result)
+          if (!d.nodes || !d.rootNodeId) throw new Error('Invalid format')
+          const count = Object.keys(d.nodes).length
+          const hasCircles = d.circles && Object.keys(d.circles).length > 0
+          confirm2(
+            `Import ${count} people${hasCircles ? ' + circles' : ''}?`,
+            'This will replace your current data. Export first to keep a backup.',
+            () => {
+              S.nodes = d.nodes; S.rootId = d.rootNodeId
+              S.circles = d.circles || {}; S.settings = d.settings || { exportPrivateNotes: false }
+              S.selId = null; closePanel(); save(); render()
+              if (S.mode === 'circles') renderCirclesView()
+              centre(); toast(`Imported ${count} people${hasCircles ? ' + circles' : ''}!`)
+            }
+          )
+        } catch (err) { toast('Invalid file. Use a Circles JSON export.') }
+      }
+      reader.readAsText(file); if (onDone) onDone()
+    }
+
+    // Wire up export/import buttons (override previous handlers)
+    $('exp').onclick = doExport
+    $('imp').onchange = function () { const f = this.files[0]; if (!f) return; doImport(f, () => { this.value = '' }) }
+    $('mexp').onclick = () => { $('mdd').classList.remove('open'); $('mbtn').classList.remove('open'); doExport() }
+    $('mimp').onchange = function () {
+      const f = this.files[0]; if (!f) return
+      $('mdd').classList.remove('open'); $('mbtn').classList.remove('open')
+      doImport(f, () => { this.value = '' })
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════════════════════
+    function init() {
+      const ok = load()
+      if (!ok || !Object.keys(S.nodes).length) initRoot()
+      centre(); render(); initWelcome()
+    }
     init()
 
     // PWA
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('silsilah-sw.js').catch(() => { }) }) }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('circles-sw.js').catch(() => { }) }) }
 
   </script>
 </body>
